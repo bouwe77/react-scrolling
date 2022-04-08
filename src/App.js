@@ -2,12 +2,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "./styles.css";
 
 export default function App() {
-  const [scrollTop, setScrollTop] = useState(0);
+  const [scrollInfo, setScrollInfo] = useState(null);
   const [goToPosition, setGoToPosition] = useState("top");
   const scrollerRef = useRef();
   const topRef = useRef();
   const bottomRef = useRef();
   const scrollPosition = useRef();
+
+  useEffect(() => {
+    if (!scrollerRef.current) return;
+    const { scrollTop, clientHeight, scrollHeight } = scrollerRef.current;
+    setScrollInfo({ scrollTop, clientHeight, scrollHeight });
+  }, []);
 
   // Scroll to either the top or bottom when the goToPosition state says so.
   useEffect(() => {
@@ -15,7 +21,7 @@ export default function App() {
     else bottomRef.current.scrollIntoView();
 
     const { scrollTop } = scrollerRef.current;
-    setScrollTop(scrollTop);
+    setScrollInfo((prev) => ({ ...prev, scrollTop }));
   }, [goToPosition]);
 
   // Determine the user has scrolled to either the top, or bottom, or somewhere in between.
@@ -29,15 +35,13 @@ export default function App() {
       `((${scrollTop} + ${clientHeight}) > (${scrollHeight} - ${offset})`
     );
 
-    // Dus de vraag is: Verandert scrollTop uberhaupt wel naar iets anders dan 0
-    // als je scrollIntoView doet op een (andere) ref?
-    // =====> Uitproberen in CodeSandbox!!!
-
     if (scrollTop + clientHeight > scrollHeight - offset)
       scrollPosition.current = "bottom";
     else if (scrollTop < offset) scrollPosition.current = "top";
     else scrollPosition.current = "somewhereInBetween";
     console.log("scrollPosition", scrollPosition.current);
+
+    setScrollInfo({ scrollTop, clientHeight, scrollHeight });
   }, []);
 
   // When scrolling, update the scrollTop state
@@ -50,7 +54,7 @@ export default function App() {
       const { scrollHeight } = scrollerRef.current;
       determineScrollPosition();
 
-      setScrollTop(scrollHeight);
+      setScrollInfo((prev) => ({ ...prev, scrollHeight }));
     };
 
     if (scrollerRef.current) ref.addEventListener("scroll", handleScroll);
@@ -93,7 +97,7 @@ export default function App() {
         </div>
       </div>
 
-      <div id="output">scrollTop: {scrollTop}</div>
+      <pre id="output">scrollTop: {JSON.stringify(scrollInfo, null, 2)}</pre>
     </>
   );
 }
